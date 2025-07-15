@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      font-size: 14px;
+      color: #333;
+    }
+    .invoice-container {
+      max-width: 800px;
+      margin: auto;
+      border: 1px solid #ccc;
+      padding: 30px;
+    }
+    .header, .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .header img {
+      max-height: 80px;
+    }
+    .invoice-details, .company-info {
+      font-size: 13px;
+    }
+    .invoice-title {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-top: 20px;
+      margin-bottom: 5px;
+    }
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .invoice-table th, .invoice-table td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    .amount-cell {
+      text-align: right;
+    }
+    .total-row td {
+      font-weight: bold;
+      background-color: #f5f5f5;
+    }
+    .amount-in-words {
+      margin-top: 20px;
+      font-style: italic;
+    }
+    .payment-details {
+      margin-top: 40px;
+    }
+    .signature-section {
+      margin-top: 50px;
+      text-align: right;
+    }
+    .signature-line {
+      border-top: 1px solid #000;
+      width: 200px;
+      margin-top: 5px;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <div class="header">
+      <div class="company-info">
+        <div><img src="data:image/png;base64,<%= logoBase64 %>" alt="FAMEWEB Logo"/></div>
+        <strong>FAMEWEB</strong><br/>
+        5d, 8C, Block B, NIT 5,<br/>
+        Faridabad, Haryana 121001<br/>
+        GSTIN: 07AAJCP9536A1ZD
+      </div>
+      <div class="invoice-details">
+        <div class="invoice-title">TAX INVOICE</div>
+        <div>Invoice No: FW-<%= invoiceId %></div>
+        <div>Date: <%= invoice.date %></div>
+      </div>
+    </div>
+
+    <div class="section-title">TO:</div>
+    <div class="client-details">
+      <%= invoice.name %><br/>
+      Email: <%= invoice.email %><br/>
+      Phone: +91 <%= invoice.phone %>
+    </div>
+
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Quantity</th>
+          <th>Rate (INR)</th>
+          <th>Total (INR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><%= invoice.description %></td>
+          <td>1</td>
+          <td class="amount-cell">₹ <%= invoice.amount.toLocaleString() %></td>
+          <td class="amount-cell">₹ <%= invoice.amount.toLocaleString() %></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td class="amount-cell">GST @18%</td>
+          <td class="amount-cell">₹ <%= invoice.tax.toLocaleString() %></td>
+        </tr>
+        <tr class="total-row">
+          <td></td>
+          <td></td>
+          <td>TOTAL</td>
+          <td class="amount-cell">₹ <%= invoice.total.toLocaleString() %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="amount-in-words">
+      <strong>In Words:</strong> INR <%= invoice.amountInWords %> Only
+    </div>
+
+    <div class="payment-details">
+      <div class="flex">
+        <div><strong>Pay To: ANY CREATORS</strong></div>
+        <div style="text-align: right;">For Fameweb</div>
+      </div>
+      A/C: 50200045223546 | IFSC: HDFCF0002445<br/>
+      HDFC Bank, Crown Complex, NIT 2, Faridabad<br/><br/>
+      Contact: SA-121, NIT 5, Faridabad<br/>
+      +91-9873742314 | info@fameweb.in
+
+      <div class="signature-section">
+        <div>Authorised Signatory</div>
+        <div class="signature-line"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      THANK YOU!
+    </div>
+  </div>
+</body>
+</html>
