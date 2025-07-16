@@ -1,21 +1,26 @@
-const fs = require("fs");
-const ejs = require("ejs");
-const htmlPdf = require("html-pdf");
-const path = require("path");
+const nodemailer = require("nodemailer");
 
-exports.generatePDFBuffer = (invoice) => {
-  return new Promise((resolve, reject) => {
-    const filePath = path.join(__dirname, "../templates/invoice-template.ejs");
-    const logoPath = path.join(__dirname, "../public/image/FW_logo_new.png");
-    const logoBase64 = fs.readFileSync(logoPath, { encoding: "base64" });
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_FROM,      // your Gmail address
+    pass: process.env.EMAIL_PASSWORD,  // your Gmail app password
+  },
+});
 
-    ejs.renderFile(filePath, { invoice, invoiceId: Math.floor(Math.random() * 10000), logoBase64 }, (err, html) => {
-      if (err) return reject(err);
+exports.sendInvoice = async (to, subject, text, pdfBuffer) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    text,
+    attachments: [
+      {
+        filename: "invoice.pdf",
+        content: pdfBuffer,
+      },
+    ],
+  };
 
-      htmlPdf.create(html).toBuffer((err, buffer) => {
-        if (err) return reject(err);
-        resolve(buffer);
-      });
-    });
-  });
+  await transporter.sendMail(mailOptions);
 };

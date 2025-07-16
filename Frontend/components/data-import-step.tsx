@@ -63,14 +63,13 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
   formData.append("file", file);
 
   try {
-    const res = await fetch("http://localhost:5000/api/upload-excel", {
+    const res = await fetch("http://localhost:5000/upload/api/upload-excel", {
       method: "POST",
       body: formData,
     });
 
     const result = await res.json();
     if (result.success) {
-      // Optionally map the keys to match your InvoiceData format
       const parsedData = result.data.map((item: any, index: number) => ({
         id: (Date.now() + index).toString(),
         date: item.Date,
@@ -85,7 +84,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
 
       setInvoiceData(parsedData);
     } else {
-      alert("Failed to parse Excel");
+      alert("❌ Failed to parse Excel");
     }
   } catch (error) {
     console.error("Upload failed", error);

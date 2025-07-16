@@ -1,18 +1,16 @@
+const puppeteer = require("puppeteer");
 const ejs = require("ejs");
-const htmlPdf = require("html-pdf");
 const path = require("path");
 
-exports.generatePDFBuffer = (data) => {
-  return new Promise((resolve, reject) => {
-    const filePath = path.join(__dirname, "../templates/invoice-template.ejs");
-    
-    ejs.renderFile(filePath, { invoice: data }, (err, html) => {
-      if (err) return reject(err);
+exports.generatePDFBuffer = async (invoiceData) => {
+  const templatePath = path.join(__dirname, "../templates/invoiceTemplate.ejs");
+  const html = await ejs.renderFile(templatePath, { invoice: invoiceData });
 
-      htmlPdf.create(html).toBuffer((err, buffer) => {
-        if (err) return reject(err);
-        resolve(buffer);
-      });
-    });
-  });
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.setContent(html);
+  const pdfBuffer = await page.pdf({ format: "A4" });
+
+  await browser.close();
+  return pdfBuffer;
 };

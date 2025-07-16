@@ -1,31 +1,19 @@
-const express = require("express");
-const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { generatePDFBuffer } = require("../utils/pdfGenerator");
+const { sendInvoice } = require("../utils/emailSender");
 
-const invoiceController = require("../controllers/invoiceController");
+router.post("/send-invoices", async (req, res) => {
+  const invoices = req.body.invoices; // array of invoices
+  const results = [];
 
-// Configure multer for Excel uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) =>
-    cb(null, `invoices_${Date.now()}${path.extname(file.originalname)}`),
-});
-
-const upload = multer({ storage });
-
-// Route: POST /upload
-router.post("/", upload.single("file"), async (req, res) => {
-  const filePath = req.file.path;
-  try {
-    await invoiceController.processInvoices(filePath);
-    fs.unlinkSync(filePath); // delete after processing
-    res.status(200).json({ message: "Invoices sent successfully!" });
-  } catch (error) {
-    console.error("Invoice processing failed:", error);
-    res.status(500).json({ message: "Failed to process invoices" });
+  for (const invoice of invoices) {
+    try {
+      const pdf = await generatePDFBuffer(invoice);
+      await sendInvoice(invoice.email, "Your Invoice", "Please find your invoice attached.", pdf);
+      results.push({ id: invoice.id, status: "sent" });
+    } catch (err) {
+      results.push({ id: invoice.id, status: "failed", error: err.message });
+    }
   }
-});
 
-module.exports = router;
+  res.json({ success: true, results });
+});
