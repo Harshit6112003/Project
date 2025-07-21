@@ -3,22 +3,40 @@ const pdfGenerator = require("../utils/pdfGenerator");
 const emailSender = require("../utils/emailSender");
 
 exports.processInvoices = async (filePath) => {
-  const workbook = xlsx.readFile(filePath);
-  const sheet = workbook.SheetNames[0];
-  const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheet]);
+  try {
+    const workbook = xlsx.readFile(filePath);
+    const sheet = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheet]);
 
-  const parsedInvoices = [];
+    const parsedInvoices = [];
 
-  for (const row of data) {
-    try {
-      const pdfBuffer = await pdfGenerator.generatePDFBuffer(row);
-      await emailSender.sendInvoice(row.Email, pdfBuffer);
+    for (const [index, row] of data.entries()) {
+      try {
+        // Validate required fields
+        if (!row.Email || !row.Name || !row.Amount) {
+          console.warn(`⚠️ Skipping row ${index + 1}: missing required fields.`);
+          continue;
+        }
 
-      parsedInvoices.push(row);
-    } catch (err) {
-      console.error("❌ Failed to send invoice to:", row.Email, err.message);
+        const pdfBuffer = await pdfGenerator.generatePDFBuffer(row);
+        await emailSender.sendInvoice(row.Email, pdfBuffer);
+
+        parsedInvoices.push({
+          ...row,
+          status: "✅ Sent",
+        });
+      } catch (err) {
+        console.error(`❌ Failed to send invoice to: ${row.Email}`, err.message);
+        parsedInvoices.push({
+          ...row,
+          status: `❌ Failed: ${err.message}`,
+        });
+      }
     }
-  }
 
-  return parsedInvoices; // return for frontend display
+    return parsedInvoices;
+  } catch (err) {
+    console.error("❌ Failed to process Excel file:", err.message);
+    throw new Error("Failed to process Excel file.");
+  }
 };

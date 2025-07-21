@@ -7,6 +7,12 @@ exports.sendInvoices = async (req, res) => {
 
   for (const invoice of invoices) {
     try {
+      if (!invoice.email) {
+        console.warn(`Skipping invoice without email`, invoice);
+        failed++;
+        continue;
+      }
+
       const pdfBuffer = await pdfGenerator.generatePDFBuffer(invoice);
       await emailSender.sendInvoice(invoice.email, pdfBuffer);
       sent++;

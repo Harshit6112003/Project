@@ -1,13 +1,25 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table"
 import { Upload, Download, Trash2, Plus } from "lucide-react"
 import type { InvoiceData } from "@/types/invoice"
 import {
@@ -16,7 +28,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog"
 
 interface DataImportStepProps {
@@ -30,68 +42,46 @@ export default function DataImportStep({ invoiceData, setInvoiceData, onNext }: 
   const [isAddingManually, setIsAddingManually] = useState(false)
   const [newInvoice, setNewInvoice] = useState<Partial<InvoiceData>>({})
 
-  const sampleData: InvoiceData[] = [
-    {
-      id: "1",
-      date: "2024-01-15",
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "+1234567890",
-      description: "Web Development Services",
-      amount: 1000,
-      tax: 100,
-      total: 1100,
-    },
-    {
-      id: "2",
-      date: "2024-01-16",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      phone: "+1234567891",
-      description: "Graphic Design Services",
-      amount: 750,
-      tax: 75,
-      total: 825,
-    },
-  ]
-
-const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    const res = await fetch("http://localhost:5000/upload/api/upload-excel", {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await res.json();
-    if (result.success) {
-      const parsedData = result.data.map((item: any, index: number) => ({
-        id: (Date.now() + index).toString(),
-        date: item.Date,
-        name: item.Name,
-        email: item.Email,
-        phone: item.Phone,
-        description: item.Description,
-        amount: Number(item.Amount),
-        tax: Number(item.Tax),
-        total: Number(item.Total),
-      }));
-
-      setInvoiceData(parsedData);
-    } else {
-      alert("❌ Failed to parse Excel");
+  const normalizeInvoiceRow = (row: any): InvoiceData => {
+    return {
+      id: row.id || `inv-${Date.now()}-${Math.random()}`,
+      date: row.date || row.Date || "",
+      name: row.name || row.Name || "",
+      email: row.email || row.Email || "",
+      phone: row.phone || row.Phone || "",
+      description: row.description || row.Description || "",
+      amount: Number(row.amount || row.Amount || 0),
+      tax: Number(row.tax || row.Tax || 0),
+      total: Number(row.total || row.Total || 0),
     }
-  } catch (error) {
-    console.error("Upload failed", error);
-    alert("Upload failed");
   }
-};
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const response = await fetch("http://localhost:5000/api/upload-excel", {
+        method: "POST",
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success && Array.isArray(result.invoices)) {
+        const normalized = result.invoices.map(normalizeInvoiceRow)
+        setInvoiceData(normalized)
+      } else {
+        alert(result.message || "Unexpected server response.")
+      }
+    } catch (err) {
+      alert("Error uploading file")
+      console.error(err)
+    }
+  }
 
   const downloadTemplate = () => {
     const csvContent =
@@ -136,7 +126,9 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       <Card>
         <CardHeader>
           <CardTitle>Import Invoice Data</CardTitle>
-          <CardDescription>Upload your invoice data via CSV/Excel file or add entries manually</CardDescription>
+          <CardDescription>
+            Upload your invoice data via CSV/Excel file or add entries manually
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -171,66 +163,21 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
                   <DialogDescription>Enter invoice details manually</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={newInvoice.date || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, date: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="name">Name *</Label>
-                    <Input
-                      id="name"
-                      value={newInvoice.name || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newInvoice.email || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, email: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      value={newInvoice.phone || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, phone: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Input
-                      id="description"
-                      value={newInvoice.description || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, description: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="amount">Amount *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      value={newInvoice.amount || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, amount: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="tax">Tax</Label>
-                    <Input
-                      id="tax"
-                      type="number"
-                      value={newInvoice.tax || ""}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, tax: Number(e.target.value) })}
-                    />
-                  </div>
+                  {["date", "name", "email", "phone", "description", "amount", "tax"].map((field) => (
+                    <div key={field}>
+                      <Label htmlFor={field}>
+                        {field.charAt(0).toUpperCase() + field.slice(1)}{["name", "email", "amount"].includes(field) ? " *" : ""}
+                      </Label>
+                      <Input
+                        id={field}
+                        type={["amount", "tax"].includes(field) ? "number" : field === "date" ? "date" : "text"}
+                        value={(newInvoice as any)[field] || ""}
+                        onChange={(e) =>
+                          setNewInvoice({ ...newInvoice, [field]: field === "amount" || field === "tax" ? Number(e.target.value) : e.target.value })
+                        }
+                      />
+                    </div>
+                  ))}
                   <div className="flex space-x-2">
                     <Button onClick={addManualInvoice} className="flex-1">
                       Add Invoice
@@ -289,9 +236,9 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
                       <TableCell>{invoice.email}</TableCell>
                       <TableCell>{invoice.phone}</TableCell>
                       <TableCell>{invoice.description}</TableCell>
-                      <TableCell>${invoice.amount}</TableCell>
-                      <TableCell>${invoice.tax}</TableCell>
-                      <TableCell>${invoice.total}</TableCell>
+                      <TableCell>${invoice.amount?.toFixed(2)}</TableCell>
+                      <TableCell>${invoice.tax?.toFixed(2)}</TableCell>
+                      <TableCell>${invoice.total?.toFixed(2)}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm" onClick={() => removeInvoice(invoice.id)}>
                           <Trash2 className="h-4 w-4" />
